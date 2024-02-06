@@ -9,11 +9,15 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 var jwt = require('jsonwebtoken');
 const secret = 'QMS2024';
+const functions = require('firebase-functions')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 dotenv.config();
+
+const port = 5005;
+
 
 // create application/json parser
 var jsonParser = bodyParser.json()
@@ -139,13 +143,8 @@ mssql.connect(config, function (err) {
         // Load hash from your password DB.
         bcrypt.compare(req.body.password, users[0].password, function(err, isLogin) {
           if (isLogin) {
-            var token = jwt.sign({ email: users[0].email, user_id: users[0].user_id }, secret, { expiresIn: '24h' });
-
-            //Return email, user_id ไว้ใช้ในการบันทึกข้อมูล
-            var email = users[0].email;
-            var user_id = users[0].user_id
-
-            res.json({status: 'ok', message: 'login success', token, email, user_id})
+            var token = jwt.sign({ email: users[0].email }, secret, { expiresIn: '24h' });
+            res.json({status: 'ok', message: 'login success', token})
           } else {
             res.json({status: 'error', message: 'Check your password. '})
           }
@@ -159,7 +158,7 @@ mssql.connect(config, function (err) {
     try {
       const token = req.headers.authorization.split(' ')[1]
       var decoded = jwt.verify(token, secret);
-      res.json({status: 'ok', decoded, email: decoded.email, user_id: decoded.user_id})
+      res.json({status: 'ok', decoded})
     } catch (err) {
       res.json({status: '', message: err.message})
     }
@@ -193,7 +192,6 @@ mssql.connect(config, function (err) {
           res.json({status: 'error', message: err})
           return;
         }
-        //console.log(results)
         //res.json(results);
         res.json({status: 'ok', user: results})
       }
@@ -207,16 +205,14 @@ mssql.connect(config, function (err) {
     const lastname =  req.body.lastname;
     const email = req.body.email;
     const avatar = req.body.avatar;
-    const updated_at = req.body.updated_at;
     connection.query(
       ' UPDATE `users` ' + 
       ' SET `firstname` = ?, ' + 
       ' `lastname` = ?, ' + 
       ' `email` = ?, ' + 
-      ' `avatar` = ?, ' + 
-      ' `updated_at` = ?' + 
+      ' `avatar` = ? ' + 
       ' WHERE `user_id` = ? ', 
-      [firstname, lastname, email, avatar,updated_at, id],
+      [firstname, lastname, email, avatar, id],
       function(err, results) {
         if (err) {
           res.json({status: 'error', message: err})
@@ -301,7 +297,7 @@ mssql.connect(config, function (err) {
           console.log('Error cars = ', err)
           return;
         }
-        res.json({status: 'ok', car: results})
+        res.json(results);
       }
     );
   })
@@ -321,10 +317,10 @@ mssql.connect(config, function (err) {
       [registration_no, brand, color, id],
       function(err, results) {
         if (err) {
-          res.json({status: 'error', message: err})
+          console.log('Error cars update = ', err)
           return;
         }
-        res.json({status: 'ok', user: results});
+        res.json(results);
       }
     );
   })
@@ -338,11 +334,10 @@ mssql.connect(config, function (err) {
       [id],
       function(err, results) {
         if (err) {
-          res.json({status: 'error', message: err})
+          console.log('Error car delete = ', err)
           return;
         }
-        //res.json({status: 'ok', user: results});
-        res.json({status: 'ok', message: 'Car id: ' + id + ' was deleted.'});
+        res.json(results);
       }
     );
   })
@@ -395,7 +390,6 @@ mssql.connect(config, function (err) {
           return;
         }
         res.json(results);
-        //res.json({status: 'ok', company: results})
       }
     );
   })
@@ -410,11 +404,10 @@ mssql.connect(config, function (err) {
       [id],
       function(err, results) {
         if (err) {
-          res.json({status: 'error', message: err})
+          console.log('Error cars = ', err)
           return;
         }
-        //res.json(results);
-        res.json({status: 'ok', company: results})
+        res.json(results);
       }
     );
   })
@@ -434,7 +427,7 @@ mssql.connect(config, function (err) {
     const location_lat = req.body.location_lat;
     const location_lng = req.body.location_lng;
     const contact_person = req.body.contact_person;
-    const contact_number = req.body.contact_number;
+    const contact_number = req.body.contact_person;
     const updated_at = req.body.updated_at;
     connection.query(
       ' UPDATE `company` ' + 
@@ -474,8 +467,7 @@ mssql.connect(config, function (err) {
           res.json({status: 'error', message: err})
           return;
         }
-        //res.json(results);
-        res.json({status: 'ok', company: results});
+        res.json(results);
       }
     );
   })
@@ -489,11 +481,10 @@ mssql.connect(config, function (err) {
       [id],
       function(err, results) {
         if (err) {
-          res.json({status: 'error', message: err})
+          console.log('Error company delete = ', err)
           return;
         }
-        //res.json(results);
-        res.json({status: 'ok', message: 'Company id: ' + id + ' was deleted.'});
+        res.json(results);
       }
     );
   })
@@ -551,10 +542,11 @@ mssql.connect(config, function (err) {
       [id],
       function(err, results) {
         if (err) {
+          //console.log('Error drives = ', err)
           res.json({status: 'error', message: err})
           return;
         }
-        res.json({status: 'ok', driver: results})
+        res.json(results);
       }
     );
   })
@@ -583,10 +575,11 @@ mssql.connect(config, function (err) {
         id],
       function(err, results) {
         if (err) {
+          //console.log('Error driver update = ', err)
           res.json({status: 'error', message: err})
           return;
         }
-        res.json({status: 'ok', user: results});
+        res.json(results);
       }
     );
   })
@@ -600,10 +593,11 @@ mssql.connect(config, function (err) {
       [id],
       function(err, results) {
         if (err) {
+          //console.log('Error driver delete = ', err)
           res.json({status: 'error', message: err})
           return;
         }
-        res.json({status: 'ok', message: 'Driver id: ' + id + ' was deleted.'});
+        res.json(results);
       }
     );
   })
@@ -1908,6 +1902,8 @@ app.put('/updatestepstatus/:id', function (req, res, next) {
 })
 
 //
-app.listen(5005, function () {
-  console.log('CORS-enabled web server listening on port 5005')
+app.listen(port, function () {
+  console.log(`CORS-enabled web server listening on port ${port}`)
 })
+
+exports.api = functions.https.onRequest(app)

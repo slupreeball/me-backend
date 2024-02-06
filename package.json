@@ -5,6 +5,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "firebase": "^10.7.2",
+    "firebase-functions": "^4.6.0",
     "jsonwebtoken": "^9.0.2",
     "mssql": "^9.1.1",
     "mysql": "^2.18.1",
@@ -12,10 +14,11 @@
   },
   "name": "expres-crud",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "deploy": "firebase deploy --only functions:api"
   },
   "keywords": [],
   "author": "",
